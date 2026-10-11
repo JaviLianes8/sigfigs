@@ -8,4 +8,6 @@ All notable changes to this project are documented here. The format follows
 
 ## [0.1.0]
 
-- First release.
+- Add `round_sig` to round a number to a given count of significant figures.
+- Add `format_sig` to format significant figures as a string, keeping trailing
+  zeros, with optional scientific notation.
