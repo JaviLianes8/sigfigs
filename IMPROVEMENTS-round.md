@@ -6,7 +6,7 @@ Progress:
 - [x] 3. CLI (`sigfigs round|count|format`, `[project.scripts]`)
 - [x] 4. Gates: `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest`
 - [ ] 5. Contracts from cited sources, seeded oracle cross-check, real wheel e2e
-- [ ] 6. Pull request opened
+- [x] 6. Pull request opened
 - [ ] 7. Independent review, fixes, re-gate, trace guard clean
 
 ## Sources (fetched 2026-10-12)
