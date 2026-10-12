@@ -102,12 +102,12 @@ def _parser() -> argparse.ArgumentParser:
     fmt.add_argument(
         "--style",
         choices=STYLES,
-        default="paren",
-        help='paren writes "1.234(5)", pm writes "1.234 +/- 0.005"',
+        default=None,
+        help='paren (default) writes "1.234(5)", pm writes "1.234 +/- 0.005"',
     )
     fmt.add_argument(
         "--pm",
-        default="+/-",
+        default=None,
         metavar="SYMBOL",
         help='plus-minus symbol for --style pm (default "+/-")',
     )
@@ -144,17 +144,20 @@ def _format(args: argparse.Namespace, parser: argparse.ArgumentParser) -> list[s
     if args.uncertainty is None:
         if args.figures is None:
             parser.error("format needs --uncertainty or --figures")
+        given = (args.style, args.pm, args.uncertainty_rounding)
+        if any(option is not None for option in given):
+            parser.error("--style, --pm and --uncertainty-rounding need --uncertainty")
         return [format_sig(args.value, args.figures, notation=args.notation, rounding=rounding)]
     figures = 2 if args.figures is None else args.figures
     text = format_uncertainty(
         args.value,
         args.uncertainty,
         figures,
-        style=args.style,
+        style=args.style or "paren",
         notation=args.notation,
         rounding=rounding,
         uncertainty_rounding=args.uncertainty_rounding,
-        pm=args.pm,
+        pm="+/-" if args.pm is None else args.pm,
     )
     return [text]
 
@@ -170,7 +173,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             lines = _count(args)
         else:
             lines = _format(args, parser)
-    except SigFigsError as error:
+    except (SigFigsError, ArithmeticError) as error:
         print(f"sigfigs: error: {error}", file=sys.stderr)
         return 1
     for line in lines:

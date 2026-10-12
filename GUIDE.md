@@ -18,6 +18,14 @@ Every function that takes a number accepts `int`, `float`, `str` or `Decimal`
   `format(2.675, ".3g")` is `"2.67"`. Pass `Decimal(x)` if you want the exact
   binary value instead.
 - NaN, infinities and unparsable text raise `InvalidNumberError`.
+- Rounding accepts any text `Decimal` accepts, including `"1_000"`; counting
+  (below) accepts only plain ASCII decimal text, since it reads the digits as written.
+
+Limits: `figures` is at most 10000 (`InvalidFiguresError` above it); a value whose
+exponent leaves the decimal range raises `InvalidNumberError`; fixed notation writes
+at most 10000 placeholder zeros and raises `InvalidNumberError` beyond that, so very
+large or small magnitudes need `notation="sci"`. `round_sig` returns a `float`, so a
+result beyond the float range becomes `inf` or `0.0`; `round_decimal` does not.
 
 ## Rounding: `round_decimal`, `round_sig`
 
@@ -72,7 +80,10 @@ format_sig(1000, 4, trailing_point=True)  # '1000.'
 Significant trailing zeros are always written. When fewer figures are requested
 than there are digits before the point, the placeholder zeros are ambiguous on
 paper (`format_sig(1234, 2)` is `"1200"`, which a reader may take as 2 to 4
-figures); use `notation="sci"` to avoid it. `trailing_point=True` adds a final
+figures); use `notation="sci"` to avoid it. Engineering notation can show the same
+ambiguity inside its mantissa (`format_sig(12, 1, notation="eng")` is `"10e+00"`,
+`format_sig(0.000123, 2, notation="eng")` is `"120e-06"`), and `trailing_point`
+cannot mark it there. `trailing_point=True` adds a final
 point to a whole number whose zeros are all significant (`"1000."`), the usual
 way to mark them.
 
@@ -151,14 +162,17 @@ Python's `'g'` presentation type also rounds to `n` significant digits, but:
 1. It removes insignificant trailing zeros (`format(1.2, ".3g")` is `"1.2"`) unless
    the `#` option is given; `format_sig` always keeps them.
 2. It chooses fixed or scientific notation by magnitude (scientific when the
-   exponent is below -4 for floats, -6 for Decimals, or at least `n`);
-   `format_sig` uses the notation you ask for.
+   exponent is below -4 for floats, -6 for Decimals, or at least `n`, so
+   `format(Decimal("1200"), ".3g")` is `"1.20e+3"`); `format_sig` uses the
+   notation you ask for.
 3. Its exponent has no zero padding for Decimals (`1.2e-4`); `format_sig` always
    writes two digits (`1.2e-04`).
 4. For a float it rounds the exact binary value; `format_sig` rounds `repr(x)`.
    The results differ only when those two decimals fall on different sides of a
    rounding boundary, such as `2.675` to three digits.
-5. It always rounds half to even; `format_sig` takes any rounding mode.
+5. For a float it rounds half to even; for a `Decimal` it follows the rounding of
+   the current `decimal` context. `format_sig` takes the mode as an argument and
+   ignores the context.
 
 The test suite cross-checks `round_decimal` against `Decimal.quantize` in every mode,
 `format_sig(..., notation="sci")` against `format(Decimal, ".{n-1}e")`, and the value
@@ -179,6 +193,9 @@ sigfigs format 1234.5 --figures 3 --notation sci # 1.23e+03
 ```
 
 A negative number may need `--` before it when it could be read as an option.
+`format` without `--uncertainty` formats the value alone and rejects the
+uncertainty-only options (`--style`, `--pm`, `--uncertainty-rounding`). `count`
+prints nothing when any of its numbers is invalid.
 Invalid input prints `sigfigs: error: ...` to standard error and exits with
 status 1; invalid usage exits with status 2. Each command has `--help` with
 examples.

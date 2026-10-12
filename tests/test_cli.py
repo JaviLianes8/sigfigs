@@ -42,6 +42,9 @@ def test_commands(capsys: pytest.CaptureFixture[str], argv: list[str], expected:
         ["round", "abc", "2"],
         ["round", "1", "0"],
         ["format", "1", "-u", "0"],
+        ["round", "1e999999999999999999", "3"],
+        ["round", "1", "99999999999999999999"],
+        ["count", "1200", "abc"],
     ],
 )
 def test_bad_input_exits_1_with_message(
@@ -60,6 +63,8 @@ def test_bad_input_exits_1_with_message(
         ["round", "1", "x"],
         ["round", "1", "2", "--rounding", "nearest"],
         ["count", "1", "--strict", "--bounds"],
+        ["format", "1", "--figures", "2", "--style", "pm"],
+        ["format", "1", "--figures", "2", "--uncertainty-rounding", "up"],
     ],
 )
 def test_bad_usage_exits_2(capsys: pytest.CaptureFixture[str], argv: list[str]) -> None:

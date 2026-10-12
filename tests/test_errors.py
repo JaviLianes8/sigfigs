@@ -70,3 +70,37 @@ def test_0_1_0_callers_catching_value_error_still_work() -> None:
 def test_errors_are_exported() -> None:
     for error in ERRORS:
         assert getattr(sigfigs, error.__name__) is error
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: format_sig("1e999999999999999999", 3),
+        lambda: format_sig("9.999e999999999999999999", 3, notation="sci"),
+        lambda: round_decimal("1e-1000000000000000010", 2),
+        lambda: format_sig("1e10002", 2),
+        lambda: format_sig("1e-10003", 2),
+    ],
+)
+def test_out_of_range_magnitudes_raise_typed_errors(call: object) -> None:
+    with pytest.raises(InvalidNumberError):
+        call()  # type: ignore[operator]
+
+
+def test_fixed_limit_is_inclusive_and_sci_still_works() -> None:
+    assert len(format_sig("1e10000", 1)) == 10001
+    assert format_sig("1e10001", 2, notation="sci") == "1.0e+10001"
+
+
+def test_figures_have_an_upper_bound() -> None:
+    assert len(round_decimal(1, 10_000).as_tuple().digits) == 10_000
+    for figures in (10_001, 10**19):
+        with pytest.raises(InvalidFiguresError):
+            round_decimal(1, figures)
+
+
+def test_uncertainty_far_below_the_value_is_rejected() -> None:
+    from sigfigs import round_uncertainty
+
+    with pytest.raises(UncertaintyError):
+        round_uncertainty("1e999999999999999999", "1e-999999999999999999")

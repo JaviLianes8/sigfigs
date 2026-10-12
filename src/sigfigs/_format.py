@@ -42,6 +42,9 @@ def format_sig(
     ``notation="sci"``. Exponents are written ``e+03`` / ``e-04``. When fewer figures are
     requested than there are digits before the point (``format_sig(1234, 2)`` gives
     ``"1200"``) the placeholder zeros are ambiguous on paper; use ``"sci"`` to avoid it.
+    ``"eng"`` has the same issue inside the mantissa (``format_sig(12, 1, notation="eng")``
+    is ``"10e+00"``). Fixed notation refuses to write more than 10000 placeholder zeros
+    (``InvalidNumberError``); use ``"sci"`` for such magnitudes.
     ``trailing_point`` marks a whole number whose zeros are all significant.
 
     Raises the errors of ``round_decimal``, plus ``InvalidOptionError`` for an unknown

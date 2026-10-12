@@ -73,7 +73,9 @@ def test_gum_726_estimate_consistent_with_uncertainty() -> None:
 
 
 def test_gum_h15_end_gauge_result() -> None:
-    # H.1.5: l = 50,000 838 mm with uc = 32 nm = 0.000032 mm.
+    # H.1.5 states "l = 50,000 838 mm with ... uc = 32 nm" (form 1 of 7.2.2). The
+    # parenthesis rendering asserted here is derived from it by form 2; the GUM does not
+    # print this string. 32 nm = 0.000032 mm.
     assert format_uncertainty("50.000838", "0.000032") == "50.000838(32)"
 
 

@@ -22,7 +22,8 @@ COUNT_EPILOG = """examples:
   sigfigs count 1200 --strict     -> error, exit status 1
 
 Leading zeros never count; with a decimal point trailing zeros count; without one,
-trailing zeros of a whole number are ambiguous (counted as not significant)."""
+trailing zeros of a whole number are ambiguous (counted as not significant).
+If any NUMBER is invalid nothing is printed and the exit status is 1."""
 
 FORMAT_EPILOG = """examples:
   sigfigs format 100.02147 -u 0.00035                -> 100.02147(35)

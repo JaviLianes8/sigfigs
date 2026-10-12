@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-from decimal import MAX_EMAX, MIN_EMIN, Context, Decimal
+from decimal import Decimal, DecimalException
 from typing import Literal, get_args
 
 from ._errors import InvalidOptionError, UncertaintyError
 from ._modes import Notation, Rounding, check_notation, decimal_mode
 from ._render import exponent_marker, fixed, power_for, shift
-from ._round import Number, check_figures, round_value, to_decimal
+from ._round import Number, check_figures, exact_context, out_of_range, round_value, to_decimal
 
 Style = Literal["paren", "pm"]
 """``"paren"`` writes ``1.234(5)`` (GUM 7.2.2 form 2), ``"pm"`` writes ``1.234 +/- 0.005``."""
 
 STYLES: tuple[str, ...] = get_args(Style)
+_MAX_DIGITS = 100_000
 
 
 def round_uncertainty(
@@ -41,7 +42,8 @@ def round_uncertainty(
     The sign of ``uncertainty`` must be positive.
 
     Raises:
-        UncertaintyError: ``uncertainty`` is zero or negative.
+        UncertaintyError: ``uncertainty`` is zero or negative, or so much smaller than
+            ``value`` that the value would need more than 100000 digits.
         TypeError, InvalidNumberError, InvalidFiguresError, InvalidOptionError: as in
             ``round_decimal``.
     """
@@ -55,8 +57,13 @@ def round_uncertainty(
     place = spread.as_tuple().exponent
     assert isinstance(place, int)
     digits = max(number.adjusted() - place + 2, 1)
-    ctx = Context(prec=digits, rounding=value_mode, Emax=MAX_EMAX, Emin=MIN_EMIN)
-    rounded = number.quantize(Decimal(1).scaleb(place, ctx), context=ctx)
+    if digits > _MAX_DIGITS:
+        raise UncertaintyError("the value needs more than 100000 digits at this uncertainty")
+    ctx = exact_context(digits, value_mode)
+    try:
+        rounded = number.quantize(Decimal(1).scaleb(place, ctx), context=ctx)
+    except DecimalException:
+        raise out_of_range(value) from None
     return (rounded.copy_abs() if rounded.is_zero() else rounded), spread
 
 
