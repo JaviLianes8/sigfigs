@@ -4,7 +4,28 @@ import sigfigs
 
 # The public API. Add every exported name here as the library grows; this list is the
 # contract and the test below fails if the module and this list disagree.
-PUBLIC_API: list[str] = ["format_sig", "round_sig"]
+PUBLIC_API: list[str] = [
+    "NOTATIONS",
+    "ROUNDING_MODES",
+    "STYLES",
+    "AmbiguousFiguresError",
+    "InvalidFiguresError",
+    "InvalidNumberError",
+    "InvalidOptionError",
+    "Notation",
+    "Number",
+    "Rounding",
+    "SigFigsError",
+    "Style",
+    "UncertaintyError",
+    "count_sig",
+    "format_sig",
+    "format_uncertainty",
+    "round_decimal",
+    "round_sig",
+    "round_uncertainty",
+    "sig_bounds",
+]
 
 
 def test_all_lists_exactly_the_public_api() -> None:

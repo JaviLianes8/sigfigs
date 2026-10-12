@@ -2,47 +2,58 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
-
-from ._round import Number, round_to_decimal
-
-
-def _digits_and_exponent(rounded: Decimal) -> tuple[int, str, int]:
-    sign, digits, exponent = rounded.as_tuple()
-    assert isinstance(exponent, int)
-    return sign, "".join(str(d) for d in digits), exponent
+from ._errors import InvalidOptionError
+from ._modes import Notation, Rounding, check_notation
+from ._render import exponent_marker, fixed, power_for, shift
+from ._round import Number, round_decimal
 
 
-def _fixed(rounded: Decimal) -> str:
-    sign, text, exponent = _digits_and_exponent(rounded)
-    if exponent >= 0:
-        body = text + "0" * exponent
-    else:
-        point = len(text) + exponent
-        body = "0." + "0" * -point + text if point <= 0 else text[:point] + "." + text[point:]
-    return "-" + body if sign else body
+def _resolve_notation(sci: bool, notation: str | None) -> str:
+    if notation is None:
+        return "sci" if sci else "fixed"
+    check_notation(notation)
+    if sci and notation != "sci":
+        raise InvalidOptionError(f"sci=True conflicts with notation={notation!r}")
+    return notation
 
 
-def _scientific(rounded: Decimal, figures: int) -> str:
-    sign, text, exponent = _digits_and_exponent(rounded)
-    text = text.ljust(figures, "0")
-    power = exponent + len(text) - 1
-    mantissa = text if figures == 1 else text[0] + "." + text[1:]
-    marker = f"e{'+' if power >= 0 else '-'}{abs(power):02d}"
-    return ("-" if sign else "") + mantissa + marker
+def format_sig(
+    x: Number,
+    figures: int,
+    *,
+    sci: bool = False,
+    notation: Notation | None = None,
+    rounding: Rounding = "half_even",
+    trailing_point: bool = False,
+) -> str:
+    """Round ``x`` to ``figures`` significant figures and write it, keeping trailing zeros.
 
+    >>> format_sig(1.2, 3)
+    '1.20'
+    >>> format_sig(0.00012345, 2, sci=True)
+    '1.2e-04'
+    >>> format_sig(123456, 4, notation="eng")
+    '123.5e+03'
+    >>> format_sig(1000, 4, trailing_point=True)
+    '1000.'
 
-def _zero(figures: int, sci: bool) -> str:
-    mantissa = "0" if figures == 1 else "0." + "0" * (figures - 1)
-    return mantissa + "e+00" if sci else mantissa
+    ``notation`` is ``"fixed"`` (default), ``"sci"`` (one digit before the point) or
+    ``"eng"`` (exponent a multiple of three). ``sci=True`` is the 0.1.0 spelling of
+    ``notation="sci"``. Exponents are written ``e+03`` / ``e-04``. When fewer figures are
+    requested than there are digits before the point (``format_sig(1234, 2)`` gives
+    ``"1200"``) the placeholder zeros are ambiguous on paper; use ``"sci"`` to avoid it.
+    ``"eng"`` has the same issue inside the mantissa (``format_sig(12, 1, notation="eng")``
+    is ``"10e+00"``). Fixed notation refuses to write more than 10000 placeholder zeros
+    (``InvalidNumberError``); use ``"sci"`` for such magnitudes.
+    ``trailing_point`` marks a whole number whose zeros are all significant.
 
-
-def format_sig(x: Number, figures: int, *, sci: bool = False) -> str:
-    """Round x to the given significant figures and format it, keeping trailing zeros.
-
-    Fixed notation by default (``1.20``), scientific when ``sci`` is true (``1.20e+00``).
+    Raises the errors of ``round_decimal``, plus ``InvalidOptionError`` for an unknown
+    ``notation`` or one that conflicts with ``sci=True``.
     """
-    rounded = round_to_decimal(x, figures)
-    if rounded == 0:
-        return _zero(figures, sci)
-    return _scientific(rounded, figures) if sci else _fixed(rounded)
+    chosen = _resolve_notation(sci, notation)
+    rounded = round_decimal(x, figures, rounding=rounding)
+    if chosen == "fixed":
+        return fixed(rounded, trailing_point=trailing_point)
+    power = power_for(rounded, chosen)
+    mantissa = fixed(shift(rounded, power), trailing_point=trailing_point)
+    return mantissa + exponent_marker(power)
