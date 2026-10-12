@@ -4,7 +4,7 @@ Progress:
 - [x] 1. Brainstorm ranked improvements (this file)
 - [x] 2. Implement on `improve/sigfigs-round` (additive API, minor bump to 0.2.0)
 - [x] 3. CLI (`sigfigs round|count|format`, `[project.scripts]`)
-- [ ] 4. Gates: `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest`
+- [x] 4. Gates: `ruff format --check .`, `ruff check .`, `mypy --strict src`, `pytest`
 - [ ] 5. Contracts from cited sources, seeded oracle cross-check, real wheel e2e
 - [ ] 6. Pull request opened
 - [ ] 7. Independent review, fixes, re-gate, trace guard clean
