@@ -5,8 +5,7 @@ spaces (``100,021 47``); those numbers are transcribed with a decimal point and 
 spaces, and quantities quoted in two units (g and mg) are expressed in one unit.
 """
 
-from decimal import Decimal, localcontext
-from pathlib import Path
+from decimal import Decimal
 
 import pytest
 
@@ -83,51 +82,3 @@ def test_gum_h16_expanded_result() -> None:
     # H.1.6: "l = (50,000 838 +/- 0,000 093) mm"
     text = format_uncertainty("50.000838", "0.000093", style="pm")
     assert text == "50.000838 +/- 0.000093"
-
-
-# General Decimal Arithmetic testcases, rounding.decTest 2.62, 'add' blocks.
-# https://speleotrove.com/decimal/dectest.zip ; the excerpt is in tests/data.
-# Each line "id add a b -> r" at precision 5 gives r = round(a + b, 5 digits, mode).
-# The decTest mode names are the names sigfigs uses.
-
-DECTEST = Path(__file__).parent / "data" / "rounding_add.decTest"
-
-
-def _dectest_cases() -> list[tuple[str, str, str, str, str]]:
-    cases = []
-    mode = ""
-    for raw in DECTEST.read_text(encoding="ascii").splitlines():
-        line = raw.split("--", 1)[0].strip()
-        if line.lower().startswith("rounding:"):
-            mode = line.split(":", 1)[1].strip()
-        elif " add " in line:
-            ident, _, left, right, _, result, *_ = line.split()
-            cases.append((ident, mode, left, right, result))
-    return cases
-
-
-CASES = _dectest_cases()
-
-
-def test_the_dectest_excerpt_covers_every_mode() -> None:
-    assert len(CASES) == 482
-    assert {mode for _, mode, *_ in CASES} == {
-        "down",
-        "half_down",
-        "half_even",
-        "half_up",
-        "up",
-        "floor",
-        "ceiling",
-        "05up",
-    }
-
-
-@pytest.mark.parametrize(("ident", "mode", "left", "right", "result"), CASES)
-def test_dectest_rounding(ident: str, mode: str, left: str, right: str, result: str) -> None:
-    with localcontext() as ctx:
-        ctx.prec = 50
-        exact = Decimal(left) + Decimal(right)
-    rounded = round_decimal(exact, 5, rounding=mode)  # type: ignore[arg-type]
-    assert rounded == Decimal(result), ident
-    assert format_sig(exact, 5, rounding=mode) == result, ident  # type: ignore[arg-type]

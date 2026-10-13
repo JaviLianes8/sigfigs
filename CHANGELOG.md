@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-13
+
+### Changed
+
+- The `rounding.decTest` excerpt is no longer committed or shipped in the sdist:
+  `scripts/fetch_upstream.py` fetches the General Decimal Arithmetic test archive,
+  checked against `tests/upstream/MANIFEST.json`, and a hand-written table covers every
+  rounding mode when it is absent.
+
 ## [0.2.0]
 
 - Add `rounding=` to `round_sig` and `format_sig` with eight modes (`half_even`
